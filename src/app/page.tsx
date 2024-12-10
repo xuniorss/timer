@@ -25,13 +25,12 @@ const Timer: React.FC<{
    onUpdate: (id: number, newTime: number) => void
    onToggle: (id: number) => void
    onRename: (id: number, newName: string) => void
-}> = ({ timer, onUpdate, onToggle, onRename }) => {
+   onRemove: (id: number) => void
+}> = ({ timer, onUpdate, onToggle, onRename, onRemove }) => {
    const [editMode, setEditMode] = useState(false)
    const [nameEditMode, setNameEditMode] = useState(false)
    const [inputValue, setInputValue] = useState(formatTime(timer.time))
    const [nameValue, setNameValue] = useState(timer.name)
-
-   // Formata o tempo em hh:mm:ss
 
    // Converte uma string formatada (hh:mm:ss) em segundos
    const parseTime = (formattedTime: string): number => {
@@ -59,7 +58,13 @@ const Timer: React.FC<{
    }
 
    return (
-      <div style={{ marginBottom: '10px' }}>
+      <div
+         style={{
+            marginBottom: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+         }}
+      >
          {nameEditMode ? (
             <input
                type="text"
@@ -110,6 +115,12 @@ const Timer: React.FC<{
             <button onClick={() => onToggle(timer.id)}>
                {timer.isRunning ? 'Pause' : 'Play'}
             </button>
+            <button
+               onClick={() => onRemove(timer.id)}
+               style={{ marginLeft: '10px' }}
+            >
+               Remover
+            </button>
          </div>
       </div>
    )
@@ -146,6 +157,10 @@ export default function Home() {
       )
    }
 
+   const removeTimer = (id: number) => {
+      setTimers((prevTimers) => prevTimers.filter((timer) => timer.id !== id))
+   }
+
    const renameTimer = (id: number, newName: string) => {
       setTimers((prevTimers) =>
          prevTimers.map((timer) =>
@@ -158,8 +173,10 @@ export default function Home() {
       const interval = setInterval(() => {
          setTimers((prevTimers) =>
             prevTimers.map((timer) =>
-               timer.isRunning && timer.time > 0
-                  ? { ...timer, time: timer.time - 1 }
+               timer.isRunning
+                  ? timer.time > 0
+                     ? { ...timer, time: timer.time - 1 }
+                     : { ...timer, time: 5 * 60, isRunning: false } // Reseta ao valor padrão
                   : timer
             )
          )
@@ -177,6 +194,7 @@ export default function Home() {
                onUpdate={updateTimer}
                onToggle={toggleTimer}
                onRename={renameTimer}
+               onRemove={removeTimer}
             />
          ))}
          <button onClick={addTimer} style={{ marginLeft: timers.length * 10 }}>
