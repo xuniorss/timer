@@ -1,101 +1,187 @@
-import Image from "next/image";
+'use client'
+
+import React, { useState } from 'react'
+
+type Timer = {
+   id: number
+   name: string
+   time: number // tempo em segundos
+   isRunning: boolean
+}
+
+const formatTime = (time: number) => {
+   const hours = Math.floor(time / 3600)
+      .toString()
+      .padStart(2, '0')
+   const minutes = Math.floor((time % 3600) / 60)
+      .toString()
+      .padStart(2, '0')
+   const seconds = (time % 60).toString().padStart(2, '0')
+   return `${hours}:${minutes}:${seconds}`
+}
+
+const Timer: React.FC<{
+   timer: Timer
+   onUpdate: (id: number, newTime: number) => void
+   onToggle: (id: number) => void
+   onRename: (id: number, newName: string) => void
+}> = ({ timer, onUpdate, onToggle, onRename }) => {
+   const [editMode, setEditMode] = useState(false)
+   const [nameEditMode, setNameEditMode] = useState(false)
+   const [inputValue, setInputValue] = useState(formatTime(timer.time))
+   const [nameValue, setNameValue] = useState(timer.name)
+
+   // Formata o tempo em hh:mm:ss
+
+   // Converte uma string formatada (hh:mm:ss) em segundos
+   const parseTime = (formattedTime: string): number => {
+      const [hours, minutes, seconds] = formattedTime.split(':').map(Number)
+      return (hours || 0) * 3600 + (minutes || 0) * 60 + (seconds || 0)
+   }
+
+   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value.replace(/[^0-9:]/g, '') // Permite apenas números e ":"
+      const parts = value.split(':').map((part) => part.padStart(2, '0'))
+      const formatted = parts.join(':').substring(0, 8) // Limita ao formato hh:mm:ss
+      setInputValue(formatted)
+   }
+
+   const handleInputBlur = () => {
+      const newTime = parseTime(inputValue)
+      onUpdate(timer.id, newTime)
+      setInputValue(formatTime(newTime)) // Garante que o formato fique correto
+      setEditMode(false)
+   }
+
+   const handleNameBlur = () => {
+      onRename(timer.id, nameValue)
+      setNameEditMode(false)
+   }
+
+   return (
+      <div style={{ marginBottom: '10px' }}>
+         {nameEditMode ? (
+            <input
+               type="text"
+               value={nameValue}
+               onChange={(e) => setNameValue(e.target.value)}
+               onBlur={handleNameBlur}
+               autoFocus
+               style={{ width: '100%', marginBottom: '5px' }}
+            />
+         ) : (
+            <div
+               onClick={() => setNameEditMode(true)}
+               style={{
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  marginBottom: '5px',
+               }}
+            >
+               {nameValue || 'Sem Nome'}
+            </div>
+         )}
+
+         <div style={{ display: 'flex', alignItems: 'center' }}>
+            {editMode ? (
+               <input
+                  type="text"
+                  value={inputValue}
+                  onChange={handleInputChange}
+                  onBlur={handleInputBlur}
+                  autoFocus
+                  style={{ width: '100px', textAlign: 'center' }}
+               />
+            ) : (
+               <span
+                  onClick={() => {
+                     setInputValue(formatTime(5 * 60)) // Default para 5 minutos ao editar
+                     setEditMode(true)
+                  }}
+                  style={{
+                     cursor: 'pointer',
+                     width: '100px',
+                     textAlign: 'center',
+                  }}
+               >
+                  {formatTime(timer.time)}
+               </span>
+            )}
+            <button onClick={() => onToggle(timer.id)}>
+               {timer.isRunning ? 'Pause' : 'Play'}
+            </button>
+         </div>
+      </div>
+   )
+}
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+   const [timers, setTimers] = useState<Timer[]>([])
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+   const addTimer = () => {
+      setTimers((prevTimers) => [
+         ...prevTimers,
+         {
+            id: Date.now(),
+            name: '',
+            time: 5 * 60, // Default 5 minutos
+            isRunning: false,
+         },
+      ])
+   }
+
+   const updateTimer = (id: number, newTime: number) => {
+      setTimers((prevTimers) =>
+         prevTimers.map((timer) =>
+            timer.id === id ? { ...timer, time: newTime } : timer
+         )
+      )
+   }
+
+   const toggleTimer = (id: number) => {
+      setTimers((prevTimers) =>
+         prevTimers.map((timer) =>
+            timer.id === id ? { ...timer, isRunning: !timer.isRunning } : timer
+         )
+      )
+   }
+
+   const renameTimer = (id: number, newName: string) => {
+      setTimers((prevTimers) =>
+         prevTimers.map((timer) =>
+            timer.id === id ? { ...timer, name: newName } : timer
+         )
+      )
+   }
+
+   React.useEffect(() => {
+      const interval = setInterval(() => {
+         setTimers((prevTimers) =>
+            prevTimers.map((timer) =>
+               timer.isRunning && timer.time > 0
+                  ? { ...timer, time: timer.time - 1 }
+                  : timer
+            )
+         )
+      }, 1000)
+      return () => clearInterval(interval)
+   }, [])
+
+   return (
+      <div style={{ padding: '20px' }}>
+         <h1>Timers</h1>
+         {timers.map((timer) => (
+            <Timer
+               key={timer.id}
+               timer={timer}
+               onUpdate={updateTimer}
+               onToggle={toggleTimer}
+               onRename={renameTimer}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+         ))}
+         <button onClick={addTimer} style={{ marginLeft: timers.length * 10 }}>
+            + Adicionar Timer
+         </button>
+      </div>
+   )
 }
