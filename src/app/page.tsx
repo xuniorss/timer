@@ -1,7 +1,7 @@
 'use client'
 
 import { TimerProps } from '@/types/timer'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Timer } from './components/Timer'
 
 export default function Home() {
@@ -14,7 +14,7 @@ export default function Home() {
             id: Date.now(),
             name: '',
             time: 5 * 60, // Default 5 minutos
-            originalTime: 5 * 60, // Tempo original
+            originalTime: 5 * 60,
             isRunning: false,
          },
       ])
@@ -37,7 +37,13 @@ export default function Home() {
    const toggleTimer = (id: number) => {
       setTimers((prevTimers) =>
          prevTimers.map((timer) =>
-            timer.id === id ? { ...timer, isRunning: !timer.isRunning } : timer
+            timer.id === id
+               ? {
+                    ...timer,
+                    isRunning: !timer.isRunning,
+                    startTime: !timer.isRunning ? Date.now() : undefined, // Define timestamp ao iniciar
+                 }
+               : timer
          )
       )
    }
@@ -64,16 +70,33 @@ export default function Home() {
       )
    }
 
-   React.useEffect(() => {
+   useEffect(() => {
       const interval = setInterval(() => {
          setTimers((prevTimers) =>
-            prevTimers.map((timer) =>
-               timer.isRunning
-                  ? timer.time > 0
-                     ? { ...timer, time: timer.time - 1 }
-                     : { ...timer, time: timer.originalTime, isRunning: false } // Reseta ao valor original
-                  : timer
-            )
+            prevTimers.map((timer) => {
+               if (timer.isRunning) {
+                  const elapsedTime = Math.floor(
+                     (Date.now() - (timer.startTime || Date.now())) / 1000
+                  )
+                  const remainingTime = Math.max(
+                     timer.originalTime - elapsedTime,
+                     0
+                  )
+
+                  // Se o tempo chegar a zero, resetamos o timer
+                  if (remainingTime === 0) {
+                     return {
+                        ...timer,
+                        time: timer.originalTime, // Reseta para o tempo original
+                        isRunning: false, // Pausa o timer
+                        startTime: undefined, // Remove o timestamp de início
+                     }
+                  }
+
+                  return { ...timer, time: remainingTime }
+               }
+               return timer
+            })
          )
       }, 1000)
       return () => clearInterval(interval)

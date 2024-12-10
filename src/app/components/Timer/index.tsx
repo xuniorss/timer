@@ -31,7 +31,7 @@ export const Timer: React.FC<{
 
    const handleInputBlur = () => {
       const newTime = parseTime(inputValue)
-      onUpdate(timer.id, newTime || 0, newTime || 0) // Atualiza o tempo e o valor original
+      onUpdate(timer.id, newTime || 0, newTime || 0)
       setInputValue(formatTime(newTime || 0))
       setEditMode(false)
    }
