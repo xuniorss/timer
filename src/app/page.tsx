@@ -1,144 +1,11 @@
 'use client'
 
+import { TimerProps } from '@/types/timer'
 import React, { useState } from 'react'
-
-type Timer = {
-   id: number
-   name: string
-   time: number // tempo em segundos
-   isRunning: boolean
-}
-
-const formatTime = (time: number) => {
-   const hours = Math.floor(time / 3600)
-      .toString()
-      .padStart(2, '0')
-   const minutes = Math.floor((time % 3600) / 60)
-      .toString()
-      .padStart(2, '0')
-   const seconds = (time % 60).toString().padStart(2, '0')
-   return `${hours}:${minutes}:${seconds}`
-}
-
-const Timer: React.FC<{
-   timer: Timer
-   onUpdate: (id: number, newTime: number) => void
-   onToggle: (id: number) => void
-   onRename: (id: number, newName: string) => void
-   onRemove: (id: number) => void
-}> = ({ timer, onUpdate, onToggle, onRename, onRemove }) => {
-   const [editMode, setEditMode] = useState(false)
-   const [nameEditMode, setNameEditMode] = useState(false)
-   const [inputValue, setInputValue] = useState(formatTime(timer.time))
-   const [nameValue, setNameValue] = useState(timer.name)
-
-   // Converte uma string formatada (hh:mm:ss) em segundos
-   const parseTime = (formattedTime: string): number => {
-      const [hours, minutes, seconds] = formattedTime.split(':').map(Number)
-      return (hours || 0) * 3600 + (minutes || 0) * 60 + (seconds || 0)
-   }
-
-   const handleInputFocus = () => {
-      setInputValue('00:00:00') // Limpa o valor ao focar no campo
-   }
-
-   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value.replace(/[^0-9]/g, '') // Permite apenas números
-      const formatted = formatAsTime(value) // Formata para hh:mm:ss
-      setInputValue(formatted)
-   }
-
-   const handleInputBlur = () => {
-      const newTime = parseTime(inputValue)
-      onUpdate(timer.id, newTime || 0) // Atualiza o tempo (0 se vazio)
-      setInputValue(formatTime(newTime || 0)) // Formata novamente
-      setEditMode(false)
-   }
-
-   const formatAsTime = (value: string): string => {
-      const seconds = value.slice(-2).padStart(2, '0')
-      const minutes = value.slice(-4, -2).padStart(2, '0')
-      const hours = value.slice(-6, -4).padStart(2, '0')
-      return `${hours}:${minutes}:${seconds}`
-   }
-
-   const handleNameBlur = () => {
-      onRename(timer.id, nameValue)
-      setNameEditMode(false)
-   }
-
-   return (
-      <div
-         style={{
-            marginBottom: '20px',
-            display: 'flex',
-            flexDirection: 'column',
-         }}
-      >
-         {nameEditMode ? (
-            <input
-               type="text"
-               value={nameValue}
-               onChange={(e) => setNameValue(e.target.value)}
-               onBlur={handleNameBlur}
-               autoFocus
-               style={{ width: '100%', marginBottom: '5px' }}
-            />
-         ) : (
-            <div
-               onClick={() => setNameEditMode(true)}
-               style={{
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                  marginBottom: '5px',
-               }}
-            >
-               {nameValue || 'Sem Nome'}
-            </div>
-         )}
-
-         <div style={{ display: 'flex', alignItems: 'center' }}>
-            {editMode ? (
-               <input
-                  type="text"
-                  value={inputValue}
-                  onFocus={handleInputFocus}
-                  onChange={handleInputChange}
-                  onBlur={handleInputBlur}
-                  autoFocus
-                  style={{ width: '100px', textAlign: 'center' }}
-               />
-            ) : (
-               <span
-                  onClick={() => {
-                     setInputValue('') // Limpa ao iniciar a edição
-                     setEditMode(true)
-                  }}
-                  style={{
-                     cursor: 'pointer',
-                     width: '100px',
-                     textAlign: 'center',
-                  }}
-               >
-                  {formatTime(timer.time)}
-               </span>
-            )}
-            <button onClick={() => onToggle(timer.id)}>
-               {timer.isRunning ? 'Pause' : 'Play'}
-            </button>
-            <button
-               onClick={() => onRemove(timer.id)}
-               style={{ marginLeft: '10px' }}
-            >
-               Remover
-            </button>
-         </div>
-      </div>
-   )
-}
+import { Timer } from './components/Timer'
 
 export default function Home() {
-   const [timers, setTimers] = useState<Timer[]>([])
+   const [timers, setTimers] = useState<TimerProps[]>([])
 
    const addTimer = () => {
       setTimers((prevTimers) => [
@@ -147,15 +14,22 @@ export default function Home() {
             id: Date.now(),
             name: '',
             time: 5 * 60, // Default 5 minutos
+            originalTime: 5 * 60, // Tempo original
             isRunning: false,
          },
       ])
    }
 
-   const updateTimer = (id: number, newTime: number) => {
+   const updateTimer = (id: number, newTime: number, originalTime?: number) => {
       setTimers((prevTimers) =>
          prevTimers.map((timer) =>
-            timer.id === id ? { ...timer, time: newTime } : timer
+            timer.id === id
+               ? {
+                    ...timer,
+                    time: newTime,
+                    originalTime: originalTime ?? timer.originalTime,
+                 }
+               : timer
          )
       )
    }
@@ -164,6 +38,16 @@ export default function Home() {
       setTimers((prevTimers) =>
          prevTimers.map((timer) =>
             timer.id === id ? { ...timer, isRunning: !timer.isRunning } : timer
+         )
+      )
+   }
+
+   const resetTimer = (id: number) => {
+      setTimers((prevTimers) =>
+         prevTimers.map((timer) =>
+            timer.id === id
+               ? { ...timer, time: timer.originalTime, isRunning: false }
+               : timer
          )
       )
    }
@@ -187,7 +71,7 @@ export default function Home() {
                timer.isRunning
                   ? timer.time > 0
                      ? { ...timer, time: timer.time - 1 }
-                     : { ...timer, time: 5 * 60, isRunning: false } // Reseta ao valor padrão
+                     : { ...timer, time: timer.originalTime, isRunning: false } // Reseta ao valor original
                   : timer
             )
          )
@@ -206,6 +90,7 @@ export default function Home() {
                onToggle={toggleTimer}
                onRename={renameTimer}
                onRemove={removeTimer}
+               onReset={resetTimer}
             />
          ))}
          <button onClick={addTimer} style={{ marginLeft: timers.length * 10 }}>
