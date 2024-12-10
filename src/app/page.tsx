@@ -38,18 +38,28 @@ const Timer: React.FC<{
       return (hours || 0) * 3600 + (minutes || 0) * 60 + (seconds || 0)
    }
 
+   const handleInputFocus = () => {
+      setInputValue('00:00:00') // Limpa o valor ao focar no campo
+   }
+
    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value.replace(/[^0-9:]/g, '') // Permite apenas números e ":"
-      const parts = value.split(':').map((part) => part.padStart(2, '0'))
-      const formatted = parts.join(':').substring(0, 8) // Limita ao formato hh:mm:ss
+      const value = e.target.value.replace(/[^0-9]/g, '') // Permite apenas números
+      const formatted = formatAsTime(value) // Formata para hh:mm:ss
       setInputValue(formatted)
    }
 
    const handleInputBlur = () => {
       const newTime = parseTime(inputValue)
-      onUpdate(timer.id, newTime)
-      setInputValue(formatTime(newTime)) // Garante que o formato fique correto
+      onUpdate(timer.id, newTime || 0) // Atualiza o tempo (0 se vazio)
+      setInputValue(formatTime(newTime || 0)) // Formata novamente
       setEditMode(false)
+   }
+
+   const formatAsTime = (value: string): string => {
+      const seconds = value.slice(-2).padStart(2, '0')
+      const minutes = value.slice(-4, -2).padStart(2, '0')
+      const hours = value.slice(-6, -4).padStart(2, '0')
+      return `${hours}:${minutes}:${seconds}`
    }
 
    const handleNameBlur = () => {
@@ -92,6 +102,7 @@ const Timer: React.FC<{
                <input
                   type="text"
                   value={inputValue}
+                  onFocus={handleInputFocus}
                   onChange={handleInputChange}
                   onBlur={handleInputBlur}
                   autoFocus
@@ -100,7 +111,7 @@ const Timer: React.FC<{
             ) : (
                <span
                   onClick={() => {
-                     setInputValue(formatTime(5 * 60)) // Default para 5 minutos ao editar
+                     setInputValue('') // Limpa ao iniciar a edição
                      setEditMode(true)
                   }}
                   style={{
