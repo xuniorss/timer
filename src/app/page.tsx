@@ -43,7 +43,9 @@ export default function Home() {
                ? {
                     ...timer,
                     isRunning: !timer.isRunning,
-                    startTime: !timer.isRunning ? Date.now() : undefined, // Define timestamp ao iniciar
+                    startTime: !timer.isRunning
+                       ? Date.now() - (timer.originalTime - timer.time) * 1000
+                       : undefined, // Calcula o novo startTime ao retomar
                  }
                : timer
          )
