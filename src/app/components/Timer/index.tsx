@@ -4,6 +4,7 @@ import { TimerProps } from '@/types/timer'
 import { formatAsTime } from '@/utils/formatAsTime'
 import { formatTime } from '@/utils/formatTime'
 import { parseTime } from '@/utils/parseTime'
+import { Pause, Play, RotateCcw, Trash2 } from 'lucide-react'
 import { ChangeEvent, useState } from 'react'
 
 export const Timer: React.FC<{
@@ -42,13 +43,7 @@ export const Timer: React.FC<{
    }
 
    return (
-      <div
-         style={{
-            marginBottom: '20px',
-            display: 'flex',
-            flexDirection: 'column',
-         }}
-      >
+      <div className="w-56 p-4 rounded-md bg-neutral-700 h-44 flex flex-col justify-between items-center">
          {nameEditMode ? (
             <input
                type="text"
@@ -61,17 +56,13 @@ export const Timer: React.FC<{
          ) : (
             <div
                onClick={() => setNameEditMode(true)}
-               style={{
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                  marginBottom: '5px',
-               }}
+               className="cursor-pointer font-bold mb-8 text-white"
             >
                {nameValue || 'Sem Nome'}
             </div>
          )}
 
-         <div style={{ display: 'flex', alignItems: 'center' }}>
+         <div className="h-full flex flex-col items-center justify-between">
             {editMode ? (
                <input
                   type="text"
@@ -80,7 +71,7 @@ export const Timer: React.FC<{
                   onChange={handleInputChange}
                   onBlur={handleInputBlur}
                   autoFocus
-                  style={{ width: '100px', textAlign: 'center' }}
+                  className="w-[6.25rem] text-center"
                />
             ) : (
                <span
@@ -88,32 +79,34 @@ export const Timer: React.FC<{
                      setInputValue('') // Limpa ao iniciar a edição
                      setEditMode(true)
                   }}
-                  style={{
-                     cursor: 'pointer',
-                     width: '100px',
-                     textAlign: 'center',
-                  }}
+                  className="cursor-pointer w-[6.25rem] text-lg text-white text-center"
                >
                   {formatTime(timer.time)}
                </span>
             )}
-            <button onClick={() => onToggle(timer.id)}>
-               {timer.isRunning ? 'Pause' : 'Play'}
-            </button>
-            {timer.isRunning && (
+            <div>
+               <button onClick={() => onToggle(timer.id)}>
+                  {timer.isRunning ? (
+                     <Pause color="yellow" />
+                  ) : (
+                     <Play color="green" />
+                  )}
+               </button>
+               {timer.isRunning && (
+                  <button
+                     onClick={() => onReset(timer.id)}
+                     style={{ marginLeft: '10px' }}
+                  >
+                     <RotateCcw color="blue" />
+                  </button>
+               )}
                <button
-                  onClick={() => onReset(timer.id)}
+                  onClick={() => onRemove(timer.id)}
                   style={{ marginLeft: '10px' }}
                >
-                  Resetar
+                  <Trash2 color="red" />
                </button>
-            )}
-            <button
-               onClick={() => onRemove(timer.id)}
-               style={{ marginLeft: '10px' }}
-            >
-               Remover
-            </button>
+            </div>
          </div>
       </div>
    )

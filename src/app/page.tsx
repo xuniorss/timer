@@ -3,6 +3,8 @@
 import { TimerProps } from '@/types/timer'
 import React, { useEffect, useState } from 'react'
 import { Timer } from './components/Timer'
+import { cn } from '@/lib/utils'
+import { BellPlus } from 'lucide-react'
 
 export default function Home() {
    const [timers, setTimers] = useState<TimerProps[]>([])
@@ -103,22 +105,32 @@ export default function Home() {
    }, [])
 
    return (
-      <div style={{ padding: '20px' }}>
-         <h1>Timers</h1>
-         {timers.map((timer) => (
-            <Timer
-               key={timer.id}
-               timer={timer}
-               onUpdate={updateTimer}
-               onToggle={toggleTimer}
-               onRename={renameTimer}
-               onRemove={removeTimer}
-               onReset={resetTimer}
-            />
-         ))}
-         <button onClick={addTimer} style={{ marginLeft: timers.length * 10 }}>
-            + Adicionar Timer
-         </button>
+      <div className="bg-neutral-800 w-full h-full p-5">
+         <h1 className="text-white">Timers</h1>
+         <div
+            className={cn(
+               'flex gap-x-2',
+               timers.length < 0 ? 'flex-col' : 'flex-row'
+            )}
+         >
+            {timers.map((timer) => (
+               <Timer
+                  key={timer.id}
+                  timer={timer}
+                  onUpdate={updateTimer}
+                  onToggle={toggleTimer}
+                  onRename={renameTimer}
+                  onRemove={removeTimer}
+                  onReset={resetTimer}
+               />
+            ))}
+            <button
+               onClick={addTimer}
+               className="hover:bg-neutral-600 rounded-tr-md rounded-br-md"
+            >
+               <BellPlus color="white" />
+            </button>
+         </div>
       </div>
    )
 }
